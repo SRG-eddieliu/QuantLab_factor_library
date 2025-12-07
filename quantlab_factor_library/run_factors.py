@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import List, Type
+from typing import List, Type, Tuple, Dict, Any
 
 import pandas as pd
 
@@ -11,12 +12,35 @@ from .analytics import (
     compute_factor_correlation,
     save_correlation_matrix,
     corr_with_ff,
+    update_registry,
 )
 from .data_loader import DataLoader
-from .factors import MeanReversion, Momentum, Volatility, DollarVolume
+from .factor_definitions import get_default_factors
 from .paths import factors_dir
 
 logger = logging.getLogger(__name__)
+
+
+def _run_factor_task(
+    factor,
+    sector_map,
+    fwd_returns: pd.DataFrame,
+    ff: pd.DataFrame | None,
+) -> Tuple[str, pd.DataFrame, dict]:
+    """
+    Helper to compute a single factor and analytics.
+    Uses a fresh DataLoader per task to avoid shared-state issues in threads.
+    """
+    loader = DataLoader()
+    raw_scores = factor.compute(loader, sector_map=sector_map)
+    analytics = compute_all_analytics(
+        raw_scores,
+        fwd_returns,
+        factor_name=factor.name,
+        write_registry=False,  # registry updated in caller to avoid contention
+        ff_factors=ff,
+    )
+    return factor.name, raw_scores, analytics
 
 
 def wide_to_long(df: pd.DataFrame, value_name: str = "Value") -> pd.DataFrame:
@@ -36,7 +60,7 @@ def save_factor(factor_name: str, factor_df: pd.DataFrame) -> Path:
     return path
 
 
-def run_all():
+def run_all(parallel: bool = False, max_workers: int | None = None):
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s")
     loader = DataLoader()
     sector_map = None
@@ -59,31 +83,36 @@ def run_all():
     price_wide = loader.load_price_wide(dataset="price_daily")
     fwd_returns = loader.forward_returns(price_wide)
 
-    factors = [
-        Momentum(lookback_days=252, skip_days=21, name="momentum_12m"),
-        Volatility(window=60, name="volatility_60d"),
-        MeanReversion(lookback_days=5, name="mean_reversion_5d"),
-        DollarVolume(window=20, name="dollar_volume_20d"),
-    ]
+    factors = get_default_factors()
 
-    factor_outputs = {}
-    ls_returns = {}
-    analytics_results = {}
-    for factor in factors:
-        raw_scores = factor.compute(loader, sector_map=sector_map)
-        factor_outputs[factor.name] = raw_scores
-        save_factor(factor.name, raw_scores)
+    factor_outputs: Dict[str, pd.DataFrame] = {}
+    ls_returns: Dict[str, pd.Series] = {}
+    analytics_results: Dict[str, dict] = {}
 
-        analytics_results[factor.name] = compute_all_analytics(
-            raw_scores,
-            fwd_returns,
-            factor_name=factor.name,
-            write_registry=True,
-            ff_factors=ff,
-        )
-        ls_series = analytics_results[factor.name].get("ls_returns")
+    if parallel:
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            futures = {ex.submit(_run_factor_task, factor, sector_map, fwd_returns, ff): factor.name for factor in factors}
+            for fut in as_completed(futures):
+                name, raw_scores, analytics = fut.result()
+                factor_outputs[name] = raw_scores
+                analytics_results[name] = analytics
+    else:
+        for factor in factors:
+            name, raw_scores, analytics = _run_factor_task(factor, sector_map, fwd_returns, ff)
+            factor_outputs[name] = raw_scores
+            analytics_results[name] = analytics
+
+    # Persist outputs and registry sequentially to avoid write contention
+    for name, raw_scores in factor_outputs.items():
+        save_factor(name, raw_scores)
+
+    for name, analytics in analytics_results.items():
+        summary = analytics.get("summary", {})
+        if summary:
+            update_registry(name, summary)
+        ls_series = analytics.get("ls_returns")
         if ls_series is not None:
-            ls_returns[factor.name] = ls_series
+            ls_returns[name] = ls_series
 
     # Factor correlation matrix
     corr = compute_factor_correlation(factor_outputs)

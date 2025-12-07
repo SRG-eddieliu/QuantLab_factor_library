@@ -8,19 +8,24 @@ Factor research toolkit that reads cleaned Parquet outputs from the data pipelin
 - Run default factors:  
   `python -m quantlab_factor_library.run_factors`
 - Example usage: [`notebooks/factor_demo.ipynb`](notebooks/factor_demo.ipynb)
+- Parallel example (optional, same flow + `parallel=True`): [`notebooks/factor_parallel_demo.ipynb`](notebooks/factor_parallel_demo.ipynb)
 
 ## What’s inside
-- `quantlab_factor_library/paths.py` – resolves repo and data roots (configurable).
-- `quantlab_factor_library/data_loader.py` – loads long-format parquet, pivots to wide price/sector, computes forward returns; loads FF factors.
-- `quantlab_factor_library/base.py` – `FactorBase` enforcing `compute_raw_factor` + `post_process`; shared cleaning via `compute`.
-- `quantlab_factor_library/factors/` – parameterized starters: Momentum, Volatility, MeanReversion, DollarVolume.
-- `quantlab_factor_library/transforms.py` – coverage filter, winsorize, fill (median/sector-median), neutralize (sector/global), z-score, drop-all-NaN; `clean_factor` helper.
-- `quantlab_factor_library/analytics.py` – IC (Spearman), autocorr (lag-1 rank persistence), decile monotonicity, LS diagnostic (top/bottom pct) with Sharpe, max drawdown, mean/std, FF regression (alpha/betas + t-stats/p-values), factor correlation, diagnostics/registry writers.
-- `quantlab_factor_library/run_factors.py` – runs default factors, saves outputs, updates analytics registry, writes factor correlations, FF time series.
-- `notebooks/factor_demo.ipynb` – end-to-end demo (load → compute → transparent pipeline → analytics → correlation → save factors/diagnostics).
-- `config/config.json` – optional path overrides.
-- FF loader: `DataLoader.load_ff_factors()` reads `data/data-processed/FAMA_FRENCH_FACTORS.parquet` (mktrf, smb, hml, rmw, cma, rf, umd).
-- FF regression uses a lightweight OLS (numpy + scipy for p-values) to keep the pipeline lean and fast.
+| Path | Purpose |
+| --- | --- |
+| `quantlab_factor_library/paths.py` | Resolve repo/data roots (configurable via `config/config.json`). |
+| `quantlab_factor_library/data_loader.py` | Load long-format parquet, pivot to wide price/sector, compute forward returns; load FF factors. |
+| `quantlab_factor_library/base.py` | `FactorBase` enforcing `compute_raw_factor` + `post_process`; shared cleaning via `compute`. |
+| `quantlab_factor_library/factors/` | Parameterized starters: Momentum, Volatility, MeanReversion, DollarVolume. |
+| `quantlab_factor_library/factor_definitions.py` | Single place to declare the default factor set; `run_factors` and demos import from here. |
+| `quantlab_factor_library/transforms.py` | Coverage filter, winsorize, fill (median/sector-median), neutralize (sector/global), z-score, drop-all-NaN; `clean_factor` helper. |
+| `quantlab_factor_library/analytics.py` | IC (Spearman), autocorr, decile monotonicity, LS diagnostic (Sharpe/max DD/mean/std), FF regression (alpha/betas + t-stats/p-values), factor correlation, diagnostics/registry writers. |
+| `quantlab_factor_library/run_factors.py` | Runs default factors, saves outputs, updates analytics registry, writes correlations/FF time series; optional `parallel=True` to fan out per-factor computations. |
+| `notebooks/factor_demo.ipynb` | End-to-end demo (load → compute → transparent pipeline → analytics → correlation → save factors/diagnostics). |
+| `notebooks/factor_parallel_demo.ipynb` | Same as above with optional parallel run snippet. |
+| `config/config.json` | Optional path overrides. |
+| FF loader | `DataLoader.load_ff_factors()` reads `data/data-processed/FAMA_FRENCH_FACTORS.parquet` (mktrf, smb, hml, rmw, cma, rf, umd). |
+| Note | FF regression uses lightweight OLS (numpy + scipy for p-values) to keep the pipeline lean. |
 
 ## Outputs
 - Factors: `../data/factors/factor_<name>.parquet` (long format: Date, Ticker, Value).
