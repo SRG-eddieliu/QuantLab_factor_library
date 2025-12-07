@@ -1,0 +1,5 @@
+{
+  "data_root": "../data",
+  "final_dir": "../data/data-processed",
+  "factors_dir": "../data/factors"
+}
