@@ -7,7 +7,7 @@ from typing import Dict, Tuple
 import numpy as np
 import pandas as pd
 
-from .paths import factors_dir
+from .paths import factors_dir, repo_root
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +122,17 @@ def save_diagnostics(diagnostics: list[dict], path: Path | None = None) -> Path:
         df_new = pd.concat([df_old, df_new], ignore_index=True)
     df_new.to_parquet(out_path, index=False)
     logger.info("Saved diagnostics to %s", out_path)
+
+    # Also persist a reference copy in-repo for visibility / versioning.
+    ref_dir = repo_root() / "diagnostics"
+    ref_dir.mkdir(parents=True, exist_ok=True)
+    ref_path = ref_dir / "factor_step_diagnostics.parquet"
+    df_new.to_parquet(ref_path, index=False)
+    logger.info("Saved diagnostics reference copy to %s", ref_path)
+    # Browser-friendly CSV copy for quick inspection
+    ref_csv = ref_dir / "factor_step_diagnostics.csv"
+    df_new.to_csv(ref_csv, index=False)
+    logger.info("Saved diagnostics reference CSV to %s", ref_csv)
     return out_path
 
 

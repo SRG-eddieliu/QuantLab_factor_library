@@ -25,7 +25,7 @@ Factor research toolkit that reads cleaned Parquet outputs from the data pipelin
 ## Outputs
 - Factors: `../data/factors/factor_<name>.parquet` (long format: Date, Ticker, Value).
 - Registry: `../data/factors/factor_analytics_summary.parquet` (mean IC, IC t-stat, IC IR, mean autocorr, decile spread, LS stats, FF alpha/betas).
-- Diagnostics: `../data/factors/factor_step_diagnostics.parquet` (IC/IR, decile spreads, LS stats, FF betas/t-stats/p-values) and `../data/factors/factor_correlation.parquet`.
+- Diagnostics: `../data/factors/factor_step_diagnostics.parquet` (IC/IR, decile spreads, LS stats, FF betas/t-stats/p-values) and `../data/factors/factor_correlation.parquet`. Reference copies (parquet + CSV) are git-tracked at [`diagnostics/factor_step_diagnostics.parquet`](diagnostics/factor_step_diagnostics.parquet) and [`diagnostics/factor_step_diagnostics.csv`](diagnostics/factor_step_diagnostics.csv) for quick inspection in a browser.
 - FF time series: `../data/factors/factor_ff_timeseries.parquet` for benchmarking/orthogonalization.
 
 ## Default cleaning/neutralization (used by `compute` and the notebook)
