@@ -34,22 +34,27 @@ Use the notebooks to see the sequence; re-run analytics/correlations/rolling wit
 | `notebooks/factor_parallel_demo.ipynb` | Same as above with optional parallel run snippet. |
 | `config/config.json` | Optional path overrides. |
 | FF loader | `DataLoader.load_ff_factors()` reads `data/data-processed/FAMA_FRENCH_FACTORS.parquet` (mktrf, smb, hml, rmw, cma, rf, umd). |
-| Note | FF regression uses lightweight OLS (numpy + scipy for p-values) to keep the pipeline lean. |
 
 ## Default factors (methodology)
-- Momentum variants: 12-1m momentum; residual momentum (market-neutralized); efficiency ratio (path smoothness).
-- Volatility/risks: volatility (60d), downside vol (60d), residual vol (252d) and idiosyncratic vol (60d), ATR (14d), return skew/kurtosis, downside beta (252d).
-- Liquidity/flow: dollar volume (20d), Amihud illiquidity (20d, 252d) plus log variant, turnover, OBV, VWAP deviation (21d).
-- Price action: mean reversion (5d), 52w high proximity, max daily return (21d), industry momentum (6–1m), coskewness (252d), Hurst exponent (252d).
-- Value/quality: size (log mkt cap), earnings yield, book-to-price, EV/EBITDA inverse, cashflow yield, free cashflow yield, accruals, ROA, ROE/profitability, leverage, gross profitability, Piotroski F-score.
-- Growth/investment: sales growth, sales growth acceleration (quarterly), asset growth, R&D intensity, investment-to-assets, net issuance (annual shares), net buyback yield (quarterly shares), dividend yield, dividend growth.
-- Events/estimates: analyst revisions (30d), earnings surprise %, standardized unexpected earnings (SUE, quarterly only).
-- Forensic/integrity: Benford chi-square D1/D2 on quarterly fundamentals.
+
+| Category | Factors (concise methodology) |
+| --- | --- |
+| Momentum & trend | `momentum_12m` 12-1m return; `residual_momentum_12m` market-neutral momentum; `efficiency_ratio_252d` total return ÷ sum(|daily returns|); `industry_momentum` sector 6–1m return mapped to members; `max_daily_return_1m` 21d max daily return (lottery tilt); `high52w_proximity` price / 252d high − 1 |
+| Reversal & path | `mean_reversion_5d` negative 5d return; `vwap_dev_21d` price vs 21d VWAP; `hurst_252d` Hurst exponent on 252d returns (trend vs mean-revert) |
+| Volatility & tail | `volatility_60d` std of returns; `downside_vol_60d` std of negative returns; `residual_vol_252d` std of market residuals; `ivol_60d` short-window idio vol; `atr_14d` average true range; `skewness_60d`/`kurtosis_60d` rolling moments; `beta_252d` market beta; `downside_beta_252d` beta on down days; `coskewness_252d` beta to squared market returns |
+| Liquidity/flow | `dollar_volume_20d` price×vol avg; `amihud_illiq_20d` / `amihud_illiq_log_20d` mean(|ret|/dollar vol); `amihud_illiq_252d` yearly window; `turnover` volume ÷ shares; `obv` cumulative signed volume |
+| Value | `earnings_yield` TTM NI / mkt cap; `book_to_price` book equity per share / price; `ev_to_ebitda_inv` (price×shares + debt − cash) / EBITDA inverted; `cashflow_yield` op CF / mkt cap; `free_cashflow_yield` (op CF − capex) / mkt cap; `accruals` (NI − CFO) / assets |
+| Quality/profitability | `size_log_mktcap` log(price×shares); `profitability_roe` NI/equity; `roa` NI/assets; `gross_profitability` gross profit/assets; `leverage` liabilities/assets |
+| Growth/investment | `sales_growth` YoY revenue; `sales_growth_accel` QoQ YoY delta; `asset_growth` YoY assets; `investment_to_assets` Δ(PPE+inventory over 4q)/assets; `rd_intensity` R&D/revenue |
+| Capital actions | `net_issuance` YoY share change (annual); `net_buyback_yield` negative 4q share growth; `dividend_yield_ttm` trailing 12m dividends/price; `dividend_growth` YoY dividend growth |
+| Composite quality | `piotroski_fscore` 0–9 from profitability, leverage/liquidity, dilution, margins, turnover |
+| Estimates/events | `analyst_revision_eps_30d` net EPS estimate revisions; `earnings_surprise` % surprise; `sue` standardized surprise over 8q std (quarterly) |
+| Forensic/integrity | `benford_chi2_d1`, `benford_chi2_d2` chi-square distance to Benford digits on quarterly fundamentals (lower = cleaner) |
 
 ## Outputs
 - Factors: `../data/factors/factor_<name>.parquet` (long format: Date, Ticker, Value).
 - Registry: `../data/factors/factor_analytics_summary.parquet` (mean IC, IC t-stat, IC IR, mean autocorr, decile spread, LS stats, FF alpha/betas).
-- Diagnostics: `../data/factors/factor_step_diagnostics.parquet` (IC/IR, decile spreads, LS stats, FF betas/t-stats/p-values) and `../data/factors/factor_correlation.parquet`. Reference copies (parquet + CSV) are git-tracked at [`diagnostics/factor_step_diagnostics.parquet`](diagnostics/factor_step_diagnostics.parquet) and [`diagnostics/factor_step_diagnostics.csv`](diagnostics/factor_step_diagnostics.csv) for quick inspection in a browser.
+- Correlation: `../data/factors/factor_correlation.parquet` (and FF corr) with CSV mirrors in `diagnostics/` for quick inspection.
 - FF time series: `../data/factors/factor_ff_timeseries.parquet` for benchmarking/orthogonalization.
 
 ## Default cleaning/neutralization (used by `compute` and the notebook)
@@ -62,3 +67,9 @@ Use the notebooks to see the sequence; re-run analytics/correlations/rolling wit
 ## Extending
 - Build new factors by subclassing `FactorBase` or parameterizing existing classes (e.g., Momentum with different lookback/skip).
 - Use FF factors for benchmarking/orthogonalization via `load_ff_factors()` and `regress_on_ff`.
+- FF regression uses lightweight OLS (numpy + scipy for p-values) to keep the pipeline lean.
+
+## References
+- Analytics registry (CSV): [`diagnostics/factor_analytics_summary.csv`](diagnostics/factor_analytics_summary.csv)
+- Rolling analytics (CSV): [`diagnostics/factor_rolling_analytics.csv`](diagnostics/factor_rolling_analytics.csv)
+- Correlation matrices (CSV): [`diagnostics/factor_correlation.csv`](diagnostics/factor_correlation.csv) and [`diagnostics/factor_ff_correlation.csv`](diagnostics/factor_ff_correlation.csv)

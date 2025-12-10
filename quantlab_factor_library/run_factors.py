@@ -150,13 +150,6 @@ def run_analytics_only(
             ff_factors=ff,
         )
         analytics_results[name] = analytics
-    # Save diagnostics summary
-    diag_rows = []
-    for name, analytics in analytics_results.items():
-        row = {"name": name, **analytics.get("summary", {})}
-        diag_rows.append(row)
-    if diag_rows:
-        save_diagnostics(diag_rows)
     return analytics_results
 
 

@@ -120,32 +120,10 @@ def update_registry(factor_name: str, summary: Dict[str, float], registry_path: 
 
 def save_diagnostics(diagnostics: list[dict], path: Path | None = None) -> Path:
     """
-    Persist per-factor step diagnostics (shapes, NaN stats, etc.).
+    Legacy helper (no-op now). Kept for backward compatibility.
     """
-    if not diagnostics:
-        return factors_dir() / "factor_step_diagnostics.parquet"
     out_path = path or factors_dir() / "factor_step_diagnostics.parquet"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    df_new = pd.DataFrame(diagnostics)
-    if out_path.exists():
-        df_old = pd.read_parquet(out_path)
-        # Drop existing rows for same factor names to keep latest run
-        if "name" in df_new.columns:
-            df_old = df_old[~df_old["name"].isin(df_new["name"])]
-        df_new = pd.concat([df_old, df_new], ignore_index=True)
-    df_new.to_parquet(out_path, index=False)
-    logger.info("Saved diagnostics to %s", out_path)
-
-    # Also persist a reference copy in-repo for visibility / versioning.
-    ref_dir = repo_root() / "diagnostics"
-    ref_dir.mkdir(parents=True, exist_ok=True)
-    ref_path = ref_dir / "factor_step_diagnostics.parquet"
-    df_new.to_parquet(ref_path, index=False)
-    logger.info("Saved diagnostics reference copy to %s", ref_path)
-    # Browser-friendly CSV copy for quick inspection
-    ref_csv = ref_dir / "factor_step_diagnostics.csv"
-    df_new.to_csv(ref_csv, index=False)
-    logger.info("Saved diagnostics reference CSV to %s", ref_csv)
+    logger.info("save_diagnostics skipped (step diagnostics disabled).")
     return out_path
 
 
