@@ -14,6 +14,7 @@ from .downside_vol import DownsideVol
 from .high52w_proximity import High52wProximity
 from .amihud_illiquidity import AmihudIlliquidity
 from .amihud_illiq_log import AmihudIlliquidityLog
+from .coskewness import Coskewness
 from .book_to_price import BookToPrice
 from .roa import ReturnOnAssets
 from .leverage import Leverage
@@ -35,6 +36,17 @@ from .efficiency_ratio import EfficiencyRatio
 from .gross_profitability import GrossProfitability
 from .sales_growth_accel import SalesGrowthAcceleration
 from .net_buyback_yield import NetBuybackYield
+from .industry_momentum import IndustryMomentum
+from .max_daily_return import MaxDailyReturn
+from .ev_to_ebitda import EVToEBITDA
+from .investment_to_assets import InvestmentToAssets
+from .piotroski_fscore import PiotroskiFScore
+from .atr import AverageTrueRange
+from .obv import OnBalanceVolume
+from .vwap_deviation import VWAPDeviation
+from .hurst_exponent import HurstExponent
+from .sue import StandardizedUnexpectedEarnings
+from .benford import BenfordChiSquareD1, BenfordChiSquareD2
 
 __all__ = [
     "Momentum",
@@ -53,6 +65,7 @@ __all__ = [
     "High52wProximity",
     "AmihudIlliquidity",
     "AmihudIlliquidityLog",
+    "Coskewness",
     "BookToPrice",
     "ReturnOnAssets",
     "Leverage",
@@ -74,4 +87,16 @@ __all__ = [
     "GrossProfitability",
     "SalesGrowthAcceleration",
     "NetBuybackYield",
+    "IndustryMomentum",
+    "MaxDailyReturn",
+    "EVToEBITDA",
+    "InvestmentToAssets",
+    "PiotroskiFScore",
+    "AverageTrueRange",
+    "OnBalanceVolume",
+    "VWAPDeviation",
+    "HurstExponent",
+    "StandardizedUnexpectedEarnings",
+    "BenfordChiSquareD1",
+    "BenfordChiSquareD2",
 ]
