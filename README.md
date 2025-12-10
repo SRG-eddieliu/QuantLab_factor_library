@@ -35,22 +35,70 @@ Use the notebooks to see the sequence; re-run analytics/correlations/rolling wit
 | `config/config.json` | Optional path overrides. |
 | FF loader | `DataLoader.load_ff_factors()` reads `data/data-processed/FAMA_FRENCH_FACTORS.parquet` (mktrf, smb, hml, rmw, cma, rf, umd). |
 
-## Default factors (methodology)
-
-| Category | Factors (concise methodology) |
-| --- | --- |
-| Momentum & trend | `momentum_12m` 12-1m return; `residual_momentum_12m` market-neutral momentum; `efficiency_ratio_252d` total return ÷ sum(|daily returns|); `industry_momentum` sector 6–1m return mapped to members; `max_daily_return_1m` 21d max daily return (lottery tilt); `high52w_proximity` price / 252d high − 1 |
-| Reversal & path | `mean_reversion_5d` negative 5d return; `vwap_dev_21d` price vs 21d VWAP; `hurst_252d` Hurst exponent on 252d returns (trend vs mean-revert) |
-| Volatility & tail | `volatility_60d` std of returns; `downside_vol_60d` std of negative returns; `residual_vol_252d` std of market residuals; `ivol_60d` short-window idio vol; `atr_14d` average true range; `skewness_60d`/`kurtosis_60d` rolling moments; `beta_252d` market beta; `downside_beta_252d` beta on down days; `coskewness_252d` beta to squared market returns |
-| Liquidity/flow | `dollar_volume_20d` price×vol avg; `amihud_illiq_20d` / `amihud_illiq_log_20d` mean(|ret|/dollar vol); `amihud_illiq_252d` yearly window; `turnover` volume ÷ shares; `obv` cumulative signed volume |
-| Value | `earnings_yield` TTM NI / mkt cap; `book_to_price` book equity per share / price; `ev_to_ebitda_inv` (price×shares + debt − cash) / EBITDA inverted; `cashflow_yield` op CF / mkt cap; `free_cashflow_yield` (op CF − capex) / mkt cap; `accruals` (NI − CFO) / assets |
-| Quality/profitability | `size_log_mktcap` log(price×shares); `profitability_roe` NI/equity; `roa` NI/assets; `gross_profitability` gross profit/assets; `leverage` liabilities/assets |
-| Growth/investment | `sales_growth` YoY revenue; `sales_growth_accel` QoQ YoY delta; `asset_growth` YoY assets; `investment_to_assets` Δ(PPE+inventory over 4q)/assets; `rd_intensity` R&D/revenue |
-| Capital actions | `net_issuance` YoY share change (annual); `net_buyback_yield` negative 4q share growth; `dividend_yield_ttm` trailing 12m dividends/price; `dividend_growth` YoY dividend growth |
-| Composite quality | `piotroski_fscore` 0–9 from profitability, leverage/liquidity, dilution, margins, turnover |
-| Estimates/events | `analyst_revision_eps_30d` net EPS estimate revisions; `earnings_surprise` % surprise; `sue` standardized surprise over 8q std (quarterly) |
-| Forensic/integrity | `benford_chi2_d1`, `benford_chi2_d2` chi-square distance to Benford digits on quarterly fundamentals (lower = cleaner) |
-
+### Full factor list
+- Momentum & Trend  
+  - momentum_12m — 12-1m return (skip last 21d), shifted 1d.  
+  - residual_momentum_12m — momentum orthogonalized to market, shifted 1d.  
+  - efficiency_ratio_252d — 252d return ÷ sum(|daily returns|), shifted 1d.  
+  - industry_momentum — sector 6–1m return mapped to members, shifted 1d.  
+  - max_daily_return_1m — 21d max single-day return, shifted 1d.  
+  - high52w_proximity — price / 252d high − 1, shifted 1d.
+- Reversal & Path  
+  - mean_reversion_5d — negative 5d return, shifted 1d.  
+  - vwap_dev_21d — price vs 21d VWAP − 1, shifted 1d.  
+  - hurst_252d — Hurst exponent on 252d returns, shifted 1d.
+- Volatility & Tail Risk  
+  - volatility_60d — rolling std of returns, shifted 1d.  
+  - downside_vol_60d — rolling std of negative returns, shifted 1d.  
+  - residual_vol_252d — rolling std of market residuals, shifted 1d.  
+  - ivol_60d — short-window idiosyncratic vol, shifted 1d.  
+  - atr_14d — average true range, shifted 1d.  
+  - skewness_60d — rolling skew of returns, shifted 1d.  
+  - kurtosis_60d — rolling kurtosis of returns, shifted 1d.  
+  - beta_252d — market beta, shifted 1d.  
+  - downside_beta_252d — beta on down-market days, shifted 1d.  
+  - coskewness_252d — beta to squared market returns, shifted 1d.
+- Liquidity & Flow  
+  - dollar_volume_20d — 20d avg price×volume, shifted 1d.  
+  - amihud_illiq_20d — mean(|ret|/dollar vol) 20d, shifted 1d.  
+  - amihud_illiq_log_20d — log-stabilized Amihud 20d, shifted 1d.  
+  - amihud_illiq_252d — yearly Amihud illiquidity, shifted 1d.  
+  - turnover — volume ÷ shares, shifted 1d.  
+  - obv — on-balance volume cumulative sum, shifted 1d.
+- Value  
+  - earnings_yield — TTM net income / market cap (quarterly ffilled), shifted 1d.  
+  - book_to_price — book equity per share / price, shifted 1d.  
+  - ev_to_ebitda_inv — inverse EV/EBITDA (EV = price×shares + debt − cash; EBITDA proxy), shifted 1d.  
+  - cashflow_yield — operating cash flow / market cap, shifted 1d.  
+  - free_cashflow_yield — (operating CF − capex) / market cap, shifted 1d.  
+  - accruals — (net income − CFO) / assets, shifted 1d.
+- Quality & Profitability  
+  - size_log_mktcap — log(price×shares), shifted 1d.  
+  - profitability_roe — NI / equity, shifted 1d.  
+  - roa — NI / total assets, shifted 1d.  
+  - gross_profitability — gross profit / assets, shifted 1d.  
+  - leverage — liabilities / assets, shifted 1d.
+- Growth & Investment  
+  - sales_growth — YoY revenue growth, shifted 1d.  
+  - sales_growth_accel — quarterly YoY growth minus YoY four quarters ago, shifted 1d.  
+  - asset_growth — YoY assets, shifted 1d.  
+  - investment_to_assets — Δ(PPE+inventory over 4q) / assets, shifted 1d.  
+  - rd_intensity — R&D / revenue, shifted 1d.
+- Capital Actions  
+  - net_issuance — YoY share change (annual), shifted 1d.  
+  - net_buyback_yield — negative 4q share growth (buybacks positive), shifted 1d.  
+  - dividend_yield_ttm — trailing 12m dividends / price, shifted 1d.  
+  - dividend_growth — YoY dividend growth, shifted 1d.
+- Composite Quality  
+  - piotroski_fscore — 0–9 composite quality score, shifted 1d.
+- Estimates & Events  
+  - analyst_revision_eps_30d — net EPS estimate revisions over 30d, shifted 1d.  
+  - earnings_surprise — surprise % vs estimates (quarterly), shifted 1d.  
+  - sue — standardized unexpected earnings (surprise / 8q std), shifted 1d.
+- Forensic & Integrity  
+  - benford_chi2_d1 — first-digit Benford chi-square (quarterly fundamentals), shifted 1d.  
+  - benford_chi2_d2 — second-digit Benford chi-square (quarterly fundamentals), shifted 1d.
+  
 ## Outputs
 - Factors: `../data/factors/factor_<name>.parquet` (long format: Date, Ticker, Value).
 - Registry: `../data/factors/factor_analytics_summary.parquet` (mean IC, IC t-stat, IC IR, mean autocorr, decile spread, LS stats, FF alpha/betas).
