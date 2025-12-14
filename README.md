@@ -111,6 +111,7 @@ Use the notebooks to see the sequence; re-run analytics/correlations/rolling wit
 - Build new factors by subclassing `FactorBase` or parameterizing existing classes (e.g., Momentum with different lookback/skip).
 - Use FF factors for benchmarking/orthogonalization via `load_ff_factors()` and `regress_on_ff`.
 - FF regression uses lightweight OLS (numpy + scipy for p-values) to keep the pipeline lean.
+- parallel run option implemented for efficient computation leveraging python built-in concurrent method `ThreadPoolExecutor`.
 
 ## References
 - Analytics registry (CSV): [`diagnostics/factor_analytics_summary.csv`](diagnostics/factor_analytics_summary.csv)
