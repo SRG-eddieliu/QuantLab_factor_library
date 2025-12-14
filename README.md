@@ -1,6 +1,8 @@
 # QuantLab Factor Library
 
-Factor research toolkit that reads cleaned Parquet outputs from the data pipeline (`../data/data-processed/*.parquet`) and writes factor signals/analytics to `../data/factors/`. Includes templates, loaders, transforms, analytics, and an example notebook.
+QuantLab Factor Library is a plug‑and‑play toolkit for building and evaluating equity factor signals on top of the cleaned outputs from the data pipeline. It loads wide price/sector data and Fama‑French benchmarks, computes forward returns, and provides 50+ prebuilt factors across momentum, reversal, volatility/tail risk, liquidity/flow, value, quality, growth, capital actions, estimates/events, and forensic integrity. Each factor subclasses a common FactorBase, runs its raw computation, and then passes through a standardized cleaning pipeline (coverage filter, winsorization, fill, sector/global neutralization, z‑score) with overrides via config/config.json.
+
+The runner supports modular steps: compute factors (optionally in parallel), run analytics (IC/IR, decile monotonicity, LS Sharpe/DD with FF regressions), compute cross-factor and FF correlations, and generate rolling IC/IR time effects. Outputs are written to data/factors as long-format Parquet (one file per factor and LS PnL), with registry and correlation files plus CSV mirrors in diagnostics for quick inspection. Two notebooks (factor_demo, factor_parallel_demo) show the full workflow and how to rerun analytics without recomputing factors. Use the default catalog or extend it by adding new factor classes and tuning cleaning/neutralization per factor.
 
 ## Quickstart
 - Configure paths in `config/config.json` if needed (`data_root`, `final_dir`, `factors_dir`); defaults point to `../data`.
