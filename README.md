@@ -35,369 +35,60 @@ Use the notebooks to see the sequence; re-run analytics/correlations/rolling wit
 | `config/config.json` | Optional path overrides. |
 | FF loader | `DataLoader.load_ff_factors()` reads `data/data-processed/FAMA_FRENCH_FACTORS.parquet` (mktrf, smb, hml, rmw, cma, rf, umd). |
 
-### Full factor list
-Momentum & Trend  
-- momentum_12m — 12-1m return (skip last 21d); trend persistence.  
-- residual_momentum_12m — momentum orthogonal to market; pure idio trend.  
-- efficiency_ratio_252d — smoothness of 252d path (higher = cleaner trend).  
-- industry_momentum — sector 6–1m return mapped to members.  
-- max_daily_return_1m — 21d max single-day jump; lottery/reversal flag.  
-- high52w_proximity — proximity to 52w high; trend strength.
-
-Reversal & Path  
-- mean_reversion_5d — negative 5d return; short-term reversal.  
-- vwap_dev_21d — price vs 21d VWAP; stretched vs flow anchor.  
-- hurst_252d — Hurst exponent on 252d returns; >0.5 trending, <0.5 mean-revert.
-
-Volatility & Tail Risk  
-- volatility_60d — rolling std of returns; low-vol anomaly proxy.  
-- downside_vol_60d — std of negative returns; downside risk focus.  
-- residual_vol_252d — std of market residuals; idiosyncratic risk.  
-- ivol_60d — short-window idiosyncratic vol.  
-- atr_14d — average true range; absolute move size.  
-- skewness_60d — rolling skew; lottery vs crash asymmetry.  
-- kurtosis_60d — rolling kurtosis; tail heaviness.  
-- beta_252d — market beta.  
-- downside_beta_252d — beta on down-market days.  
-- coskewness_252d — beta to squared market returns; tail co-movement.
-
-Liquidity & Flow  
-- dollar_volume_20d — 20d avg price×volume; trading capacity.  
-- amihud_illiq_20d — |ret|/dollar vol (20d); price impact.  
-- amihud_illiq_log_20d — log-stabilized illiquidity (20d).  
-- amihud_illiq_252d — annual illiquidity.  
-- turnover — volume ÷ shares; attention/churn.  
-- obv — cumulative signed volume; flow pressure.
-
-Value  
-- earnings_yield — TTM net income / mkt cap (quarterly ffill); cheapness.  
-- book_to_price — book per share / price; value.  
-- ev_to_ebitda_inv — inverse EV/EBITDA (EV = price×shares + debt − cash).  
-- cashflow_yield — operating CF / mkt cap.  
-- free_cashflow_yield — (op CF − capex) / mkt cap.  
-- accruals — (NI − CFO) / assets; earnings quality.
-
-Quality & Profitability  
-- size_log_mktcap — log(price×shares).  
-- profitability_roe — NI / equity.  
-- roa — NI / assets.  
-- gross_profitability — gross profit / assets.  
-- leverage — liabilities / assets.
-
-Growth & Investment  
-- sales_growth — YoY revenue growth.  
-- sales_growth_accel — quarterly YoY growth minus YoY four quarters ago.  
-- asset_growth — YoY assets.  
-- investment_to_assets — Δ(PPE+inventory over 4q) / assets.  
-- rd_intensity — R&D / revenue.
-
-Capital Actions  
-- net_issuance — YoY share change (annual).  
-- net_buyback_yield — negative 4q share growth (buybacks positive).  
-- dividend_yield_ttm — trailing 12m dividends / price.  
-- dividend_growth — YoY dividend growth.
-
-Composite Quality  
-- piotroski_fscore — 0–9 composite quality score.
-
-Estimates & Events  
-- analyst_revision_eps_30d — net EPS estimate revisions over 30d.  
-- earnings_surprise — surprise % vs estimates (quarterly).  
-- sue — standardized unexpected earnings (surprise / 8q std).
-
-Forensic & Integrity  
-- benford_chi2_d1 — first-digit Benford chi-square (quarterly fundamentals).  
-- benford_chi2_d2 — second-digit Benford chi-square (quarterly fundamentals).
-
-The asymmetry of the return distribution. High positive skew means frequent small losses but occasional large gains.
-
-Short: Retail traders tend to overpay for positively skewed stocks (the "lottery ticket" effect), leading to poor long-term returns.
-
-kurtosis_60d
-
-The "fat-tailedness" of the return distribution. High kurtosis means more extreme events (crashes or spikes).
-
-Short: High tail risk (fat tails) is generally penalized by investors.
-
-beta_252d
-
-Market Beta: measures the stock's sensitivity to the overall market return.
-
-Short: Used to short high-beta stocks and long low-beta stocks to capture the low-beta/low-vol anomaly.
-
-downside_beta_252d
-
-Beta calculated only on days when the market itself was down.
-
-Short: Stocks that fall disproportionately more than the market during stress are highly risky and should be shorted.
-
-coskewness_252d
-
-Measures a stock's sensitivity to market volatility (squared market returns).
-
-Short: Stocks that suffer most when market volatility rises are poor hedges and should be avoided or shorted.
-
-IV. Liquidity & Flow
-
-These factors capture the ease of trading and the supply/demand dynamics of a stock.
-
-Factor Name
-
-Measures
-
-Trading Intuition (High Value)
-
-dollar_volume_20d
-
-The average daily traded dollar value over 20 days.
-
-Short: High dollar volume means high liquidity. Low liquidity stocks often carry an illiquidity premium that can be exploited by going long.
-
-amihud_illiq_20d
-
-Amihud's illiquidity measure: price impact per unit of volume (high value = high price impact).
-
-Long: Stocks with high illiquidity (high Amihud) are poorly rewarded and often shorted to capture the illiquidity premium.
-
-amihud_illiq_log_20d
-
-Log-transformed version of Amihud's measure for stabilizing the distribution.
-
-Long: Same intuition as amihud_illiq_20d.
-
-amihud_illiq_252d
-
-The yearly version of the illiquidity measure.
-
-Long: Captures long-term structural illiquidity premium.
-
-turnover
-
-Trading volume divided by shares outstanding (how frequently shares change hands).
-
-Short: High turnover means high trading interest; low turnover stocks are often neglected and may carry a premium.
-
-obv
-
-On-Balance Volume: a cumulative sum of volume that adds on up days and subtracts on down days.
-
-Long: Rising OBV indicates buying pressure (accumulation) that often precedes price appreciation.
-
-V. Value
-
-These are classic factors that identify stocks trading cheaply relative to their fundamentals, based on the principle of mean reversion.
-
-Factor Name
-
-Measures
-
-Trading Intuition (High Value)
-
-earnings_yield
-
-TTM Net Income / Market Cap (the inverse of the P/E ratio).
-
-Long: High earnings yield means the stock is cheap relative to its earnings power (classic Value signal).
-
-book_to_price
-
-Book Equity per Share / Price (the inverse of the P/B ratio).
-
-Long: High B/P means the stock is cheap relative to its historical accounting value (classic Value signal).
-
-ev_to_ebitda_inv
-
-Inverse of Enterprise Value to EBITDA. (EV accounts for debt and cash).
-
-Long: A preferred Value metric that is less susceptible to accounting tricks than P/E. High value means cheap relative to operating cash flow.
-
-cashflow_yield
-
-Operating Cash Flow / Market Cap.
-
-Long: Cash flow is harder to manipulate than net income. High value means cheap relative to actual cash generation.
-
-free_cashflow_yield
-
-(Operating CF - Capex) / Market Cap.
-
-Long: The purest form of cash flow: the money the company has left after funding necessary maintenance. High value means excellent cash generation relative to price.
-
-accruals
-
-(Net Income - Operating Cash Flow) / Assets.
-
-Short: Measures the use of non-cash accounting entries (aggressiveness). High accruals predict lower future earnings (forensic accounting signal).
-
-VI. Quality & Profitability
-
-These factors reward companies with high profitability, strong balance sheets, and consistent performance.
-
-Factor Name
-
-Measures
-
-Trading Intuition (High Value)
-
-size_log_mktcap
-
-Logarithm of Market Capitalization.
-
-Long/Short: Typically used as a risk factor (Small stocks tend to outperform, hence we short large caps or use this to orthogonalize other factors).
-
-profitability_roe
-
-Return on Equity (Net Income / Equity).
-
-Long: High ROE indicates high return for shareholders' investment (Quality signal).
-
-roa
-
-Return on Assets (Net Income / Total Assets).
-
-Long: Measures management's efficiency in using the company's total assets (Quality signal).
-
-gross_profitability
-
-Gross Profit / Total Assets.
-
-Long: A highly robust quality metric (Novy-Marx) that correlates with high returns.
-
-leverage
-
-Total Liabilities / Total Assets.
-
-Short: High leverage increases bankruptcy risk and reduces financial flexibility (a "Quality" detractor).
-
-VII. Growth & Investment
-
-These factors focus on the speed of business expansion and investment decisions.
-
-Factor Name
-
-Measures
-
-Trading Intuition (High Value)
-
-sales_growth
-
-Year-over-Year (YoY) Revenue Growth.
-
-Long: Rewards companies with expanding sales, a key driver of long-term value.
-
-sales_growth_accel
-
-Quarterly YoY growth minus the YoY growth four quarters ago (the acceleration or deceleration of growth).
-
-Long: Rewards companies whose growth rate is currently increasing (often a stronger signal than the absolute growth rate).
-
-asset_growth
-
-Year-over-Year (YoY) Total Asset Growth.
-
-Short: Companies that grow assets aggressively (high investment) often destroy shareholder value (Investment Anomaly).
-
-investment_to_assets
-
-Change in capital assets (PPE + inventory) relative to total assets.
-
-Short: Same as asset growth; captures aggressive investment which often leads to underperformance (misallocation of capital).
-
-rd_intensity
-
-Research & Development expense / Revenue.
-
-Long: Rewards companies investing heavily in future growth and innovation, often a long-term Quality/Growth signal.
-
-VIII. Capital Actions
-
-These factors capture management's confidence and shareholder return policy.
-
-Factor Name
-
-Measures
-
-Trading Intuition (High Value)
-
-net_issuance
-
-YoY change in shares outstanding.
-
-Short: High net issuance suggests equity is being issued to finance projects, often diluting existing shareholders or signaling that management thinks the stock is overvalued.
-
-net_buyback_yield
-
-The negative of share growth (positive value means net share reduction/buybacks).
-
-Long: Buybacks signal management confidence and directly reduce the share count, boosting earnings per share.
-
-dividend_yield_ttm
-
-Trailing 12-month dividends / Price.
-
-Long: Rewards income-generating stocks, often indicating maturity and stability.
-
-dividend_growth
-
-YoY dividend growth rate.
-
-Long: Suggests management confidence in future earnings stability.
-
-IX. Composite Quality & Estimates/Events
-
-These groups contain pre-packaged composites and information shock indicators.
-
-Factor Name
-
-Measures
-
-Trading Intuition (High Value)
-
-piotroski_fscore
-
-A 0-9 score assessing the strength of a company's financial position (profitability, leverage, liquidity, operating efficiency).
-
-Long: Rewards high-quality stocks based on fundamental composite criteria.
-
-analyst_revision_eps_30d
-
-Net change in consensus EPS estimates over the last 30 days.
-
-Long: Positive revisions predict future stock price appreciation (Post-Earnings Announcement Drift, PEAD).
-
-earnings_surprise
-
-The magnitude of the quarterly earnings surprise relative to consensus.
-
-Long: Captures the immediate impact of an earnings beat or miss.
-
-sue
-
-Standardized Unexpected Earnings (the surprise scaled by historical standard deviation).
-
-Long: A robust measure of the information shock, predicting future positive returns (PEAD).
-
-X. Forensic & Integrity
-
-These factors look for accounting irregularities or signs of manipulation.
-
-Factor Name
-
-Measures
-
-Trading Intuition (High Value)
-
-benford_chi2_d1
-
-A Chi-square score measuring how much the first digits of quarterly fundamentals deviate from Benford's Law (expected distribution).
-
-Short: High chi-square suggests that the numbers may have been manipulated or smoothed, indicating high accounting risk.
-
-benford_chi2_d2
-
-Same test, but on the second digit distribution.
-
-Short: Same intuition; a high score indicates data integrity risk.
+#### Factor table
+| # | Factor | Methodology | Intuition |
+| --- | --- | --- | --- |
+| 1 | momentum_12m | 12-1m return skip last 21d | Trend persistence |
+| 2 | residual_momentum_12m | estimated rolling beta; computed residual_ret=stock_ret-beta*mkt_ret; Sum(residual_ret) over rolling window skip last 21d | Pure idio trend |
+| 3 | efficiency_ratio_252d | 252d total return / sum(|daily returns|) | Higher efficiency ratios are often associated with cleaner persistent trends  |
+| 4 | industry_momentum | Sector 6–1m return mapped to members | Sector momentum |
+| 5 | max_daily_return_1m | 21d max single-day return | Lottery spike / reversal pointing lower forward return |
+| 6 | high52w_proximity | Price / 252d high − 1 | Strength if current price near year highs |
+| 7 | mean_reversion_5d | Negative 5d return | Short-term reversal |
+| 8 | vwap_dev_21d | Price / 21d VWAP -1 | high menas overbuying likely revert |
+| 9 | hurst_252d | Hurst exponent on 252d returns measuring persistence | Trend (>0.5) vs mean-revert (<0.5) can be used as filter |
+| 10 | volatility_60d | Rolling std of returns | Low-vol premium |
+| 11 | downside_vol_60d | Std of negative returns | Downside risk premium |
+| 12 | residual_vol_252d | Std of market residuals; calculated by std(stock_ret - beta*mkt) | Idio risk penalty |
+| 13 | ivol_60d | Short-window residual_vol | Faster idio risk |
+| 14 | atr_14d | Average true range measured by avg of max(high−low,high−prev_close,low−prev_close) | Absolute move size |
+| 15 | skewness_60d | Rolling skew | Lottery vs crash asymmetry |
+| 16 | kurtosis_60d | Rolling kurtosis | Tail heaviness |
+| 17 | beta_252d | Market beta | Systematic risk |
+| 18 | downside_beta_252d | Beta on down-market days | Bad-beta exposure |
+| 19 | coskewness_252d | Beta to squared market returns measuring how stock co-move with mkt vol | high coskewness lower fwd ret |
+| 20 | dollar_volume_20d | 20d avg price×volume | Liquidity capacity; can be used as liquidity filter |
+| 21 | amihud_illiq_20d | Mean(|ret|/dollar vol) 20d | Price impact per trading volume (illiquidity), high idicating illiquidity lower fwd ret |
+| 22 | amihud_illiq_log_20d | Log-stabilized illiquidity 20d | Same as above, smoother |
+| 23 | amihud_illiq_252d | Annual illiquidity | Structural illiquidity premium |
+| 24 | turnover | Volume ÷ shares | Attention/churn |
+| 25 | obv | on balance volume; cumulative sum(volume_updays-volume_downdays) | Flow pressure |
+| 26 | earnings_yield | TTM net income / mkt cap | Cheapness (value) |
+| 27 | book_to_price | Book per share / price | Cheap vs book |
+| 28 | ev_to_ebitda_inv | Inverse EV/EBITDA (EV = price×shares+debt−cash) | Cheap vs operating cash |
+| 29 | cashflow_yield | Operating CF / mkt cap | Cheap vs cash |
+| 30 | free_cashflow_yield | (Operating CF − capex) / mkt cap | Cheap vs free cash |
+| 31 | accruals | (NI − CFO) / assets | Earnings quality (lower better) |
+| 32 | size_log_mktcap | Log(price×shares) | Size exposure |
+| 33 | profitability_roe | NI / equity | Quality profitability |
+| 34 | roa | NI / assets | Efficiency of assets |
+| 35 | gross_profitability | Gross profit / assets | Quality (Novy-Marx) |
+| 36 | leverage | Liabilities / assets | Balance-sheet risk |
+| 37 | sales_growth | YoY revenue growth | Growth strength |
+| 38 | sales_growth_accel | QoQ change in YoY revenue growth | Growth acceleration |
+| 39 | asset_growth | YoY assets | Investment intensity (high often bad) |
+| 40 | investment_to_assets | Δ(PPE+inventory over 4q) / assets | Investment aggressiveness |
+| 41 | rd_intensity | R&D / revenue | Innovation spend |
+| 42 | net_issuance | YoY share change (annual) | Dilution signal |
+| 43 | net_buyback_yield | Negative 4q share growth | Buyback support |
+| 44 | dividend_yield_ttm | Trailing 12m dividends / price | Income/defensive |
+| 45 | dividend_growth | YoY dividend growth | Payout momentum |
+| 46 | piotroski_fscore | 0–9 composite quality | Balance-sheet/earnings health |
+| 47 | analyst_revision_eps_30d | Net EPS estimate revisions (#analyst increased EPS est - decrease) 30d | Info drift from revisions |
+| 48 | earnings_surprise | qtr; (reportedEPS - estEPS)/estEPS | Post-earnings drift |
+| 49 | sue | Surprise / rolling 8q std | Standardized surprise |
+| 50 | benford_chi2_d1 | First-digit Benford chi-square | Accounting conformity (lower better) |
+| 51 | benford_chi2_d2 | Second-digit Benford chi-square | Accounting conformity (lower better) |
 
 
 ## Outputs
